@@ -17,6 +17,9 @@ class TelescopeComm:
         self.ser.parity = serial.PARITY_NONE
         self.ser.stopbits = serial.STOPBITS_ONE
 
+        self.nAltSpeed = 0
+        self.nAzmSpeed = 0
+
         # Open the serial port, handle exception if unable to open
         try:
             self.ser.open()
@@ -26,49 +29,44 @@ class TelescopeComm:
         # Read back an echo value to test
         echoInput = bytearray([ord('K'), 69])
         expectedResp = bytearray([69, TelescopeComm.STOPBYTE])
-        resp = bytearray(ord(b) for b in self._executeCommand(echoInput))
-        print(echoInput, expectedResp, resp)
-        if resp != expectedResp:
+        if self._executeCommand(echoInput) != expectedResp:
             raise RuntimeError('Error: unable to communicate with telescope!')
+
+        # Success
+        print('Telescope found at port', strDevice)
 
     # sends a slew command to the mount
     # strID should be Alt or Azm, nSpeed is a signed int
     def slew(self, strID, nSpeed):
         # Positive / Negative altitude / azimuth
         cmdDict = {
-            'Alt+' : (2, 17, 36, nspeed),
-            'Alt-' : (2, 17, 37, nspeed),
-            'Azm+' : (2, 16, 36, nspeed),
-            'Azm-' : (2, 16, 37, nspeed)
+            'Alt+' : [2, 17, 36, abs(nSpeed)],
+            'Alt-' : [2, 17, 37, abs(nSpeed)],
+            'Azm+' : [2, 16, 36, abs(nSpeed)],
+            'Azm-' : [2, 16, 37, abs(nSpeed)]
         }
 
         # Create local copy of string, append '+' or '-' depending
         strID = copy.copy(strID)
-        if strID is 'Alt' or strID is 'Azm':
+        if strID == 'Alt' or strID == 'Azm':
             # Store local speed values as well
-            if strID is 'Alt':
+            if strID == 'Alt':
                 self.nAltSpeed = nSpeed
             else:
                 self.nAzmSpeed = nSpeed
 
             # Append '+' or '-' depending on sign
-            strID.append('+' if nSpeed > 0 else '-')
+            strID += '+' if nSpeed > 0 else '-'
 
             # Create command bytes
             cmdSlew = bytearray([ord('P'), 0, 0, 0, 0, 0, 0, 0])
-            #cmdSlew[1:] = *cmdDict[strID]
-
+            cmdSlew[1:5] = bytearray(cmdDict[strID])
             # execute command and return True
             self._executeCommand(cmdSlew)
             return True
 
         # Return false if not handled properly
         return False
-
-    # Close port if open on deletion
-    def __del__(self):
-        if self.ser.isOpen():
-            self.ser.close()
 
     # Internal function that sends a serial
     # command and waits for the stop byte
@@ -90,4 +88,4 @@ class TelescopeComm:
             raise RuntimeError('Error: stop char not recieved!')
 
         # Return the response
-        return bufResp
+        return bytearray(ord(b) for b in bufResp)

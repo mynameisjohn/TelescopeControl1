@@ -30,28 +30,27 @@ def Init(strDevice, sdlEventAddr):
     # Key presses up will stop movement in that direction
     def fnSlewKeyUp(btn, mgr):
         nonlocal comm
-        if keyCode in {sdl2.keycode.SDLK_UP, sdl2.keycode.SDLK_DOWN}:
+        if btn.code in {sdl2.keycode.SDLK_UP, sdl2.keycode.SDLK_DOWN}:
             strID = 'Alt'
-        elif keyCode in {sdl2.keycode.SDLK_LEFT, sdl2.keycode.SDLK_RIGHT}:
+        elif btn.code in {sdl2.keycode.SDLK_LEFT, sdl2.keycode.SDLK_RIGHT}:
             strID = 'Azm'
-        g_TelescopeComm.slew(strID, 0)
+        comm.slew(strID, 0)
 
     # Key  presses down will start slewing
     # TODO changing direction, check the manager for opposite state
-    nSpeed = 5
     def fnSlewKeyDown(btn, mgr):
         nonlocal comm
-        nonlocal nSpeed
+        nSpeed = 7
         # Alt or Azimuth
-        if keyCode in {sdl2.keycode.SDLK_UP, sdl2.keycode.SDLK_DOWN}:
+        if btn.code in {sdl2.keycode.SDLK_UP, sdl2.keycode.SDLK_DOWN}:
             strID = 'Alt'
-        elif keyCode in {sdl2.keycode.SDLK_LEFT, sdl2.keycode.SDLK_RIGHT}:
+        elif btn.code in {sdl2.keycode.SDLK_LEFT, sdl2.keycode.SDLK_RIGHT}:
             strID = 'Azm'
         # Negate for down, left
-        if keyCode in {sdl2.keycode.SDLK_DOWN, sdl2.keycode.SDLK_LEFT}:
+        if btn.code in {sdl2.keycode.SDLK_DOWN, sdl2.keycode.SDLK_LEFT}:
             nSpeed = -nSpeed
         # Send slew command
-        g_TelescopeComm.slew(strID, nSpeed)
+        comm.slew(strID, nSpeed)
 
     # create button handlers for escape, up, down, left, right
     keyList = [Button(sdl2.keycode.SDLK_ESCAPE, fnUp = fnQuit)]
@@ -61,14 +60,11 @@ def Init(strDevice, sdlEventAddr):
     # Create keyboard manager, store event address
     g_KeybdMgr = KeyboardManager(keyList)
     g_sdlEventAddress = int(sdlEventAddr)
-    print('SDL event address is', g_sdlEventAddress)
 
 # Handle SDL events
 def HandleEvent():
     # Capture global telescope comm
     global g_KeybdMgr, g_QuitFlag, g_sdlEventAddress
-    # Slew commands have a speed of 5 for now
-    nSpeed = 5
 
     # construct the SDL event from the address
     e = sdl2.events.SDL_Event.from_address(g_sdlEventAddress)
