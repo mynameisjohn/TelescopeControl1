@@ -26,9 +26,9 @@ class TelescopeComm:
         # Read back an echo value to test
         echoInput = bytearray([ord('K'), 69])
         expectedResp = bytearray([69, TelescopeComm.STOPBYTE])
-        resp = self._executeCommand(echoInput)
+        resp = bytearray(ord(b) for b in self._executeCommand(echoInput))
         print(echoInput, expectedResp, resp)
-        if bytearray(ord(b) for b in resp) != expectedResp:
+        if resp != expectedResp:
             raise RuntimeError('Error: unable to communicate with telescope!')
 
     # sends a slew command to the mount
