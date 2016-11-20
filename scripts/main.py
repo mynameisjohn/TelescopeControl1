@@ -17,7 +17,7 @@ g_sdlEventAddress = None
 # Init with device name and address of SDL event
 def Init(strDevice, sdlEventAddr):
     # Create communications object
-    comm = TelescopeComm(str(strDevice))
+    comm = TelescopeComm(strDevice.decode('utf-8'))
 
     # Set up keyboard manager
     global g_KeybdMgr, g_QuitFlag, g_sdlEventAddress

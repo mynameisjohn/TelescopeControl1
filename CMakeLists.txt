@@ -17,4 +17,3 @@ target_include_directories(TelescopeControl PUBLIC
     ${SDL2_INCLUDE_DIR})
 
 target_link_libraries(TelescopeControl LINK_PUBLIC PyLiaison ${PYTHON_LIBRARY} ${SDL2_LIBRARY})
-

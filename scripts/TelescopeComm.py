@@ -24,7 +24,11 @@ class TelescopeComm:
             raise RuntimeError('Error: Unable to open serial port!')
 
         # Read back an echo value to test
-        if self._executeCommand(bytearray(ord('K'), 69)) != bytearray(69, TelescopeComm.STOPBYTE):
+        echoInput = bytearray([ord('K'), 69])
+        expectedResp = bytearray([69, TelescopeComm.STOPBYTE])
+        resp = self._executeCommand(echoInput)
+        print(echoInput, expectedResp, resp)
+        if bytearray(ord(b) for b in resp) != expectedResp:
             raise RuntimeError('Error: unable to communicate with telescope!')
 
     # sends a slew command to the mount
@@ -60,6 +64,11 @@ class TelescopeComm:
 
         # Return false if not handled properly
         return False
+
+    # Close port if open on deletion
+    def __del__(self):
+        if self.ser.isOpen():
+            self.ser.close()
 
     # Internal function that sends a serial
     # command and waits for the stop byte
