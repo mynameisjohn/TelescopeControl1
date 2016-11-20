@@ -12,6 +12,7 @@ def Update():
 # Global quit flag and keyboard input manager
 g_QuitFlag = False
 g_KeybdMgr = None
+g_sdlEventAddress = None
 
 # Init with device name and address of SDL event
 def Init(strDevice, sdlEventAddr):
@@ -19,8 +20,7 @@ def Init(strDevice, sdlEventAddr):
     comm = TelescopeComm(str(strDevice))
 
     # Set up keyboard manager
-    global g_KeybdMgr, g_QuitFlag
-
+    global g_KeybdMgr, g_QuitFlag, g_sdlEventAddress
 
     # Escape key will quit
     def fnQuit(btn, mgr):
@@ -58,17 +58,19 @@ def Init(strDevice, sdlEventAddr):
     for keyCode in {sdl2.keycode.SDLK_UP, sdl2.keycode.SDLK_DOWN, sdl2.keycode.SDLK_LEFT, sdl2.keycode.SDLK_RIGHT}:
         keyList.append(Button(keyCode, fnUp = fnSlewKeyUp, fnDown = fnSlewKeyDown))
 
-    # Create keyboard manager
+    # Create keyboard manager, store event address
     g_KeybdMgr = KeyboardManager(keyList)
+    g_sdlEventAddress = int(sdlEventAddr)
+    print('SDL event address is', g_sdlEventAddress)
 
 # Handle SDL events
 def HandleEvent():
     # Capture global telescope comm
-    global g_KeybdMgr, g_QuitFlag
+    global g_KeybdMgr, g_QuitFlag, g_sdlEventAddress
     # Slew commands have a speed of 5 for now
     nSpeed = 5
 
-    # construct the SDL event from the addresss
+    # construct the SDL event from the address
     e = sdl2.events.SDL_Event.from_address(g_sdlEventAddress)
 
     # Return false for quit events

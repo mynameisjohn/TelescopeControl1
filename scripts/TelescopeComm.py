@@ -17,9 +17,13 @@ class TelescopeComm:
         self.ser.parity = serial.PARITY_NONE
         self.ser.stopbits = serial.STOPBITS_ONE
 
+        # Open the serial port, handle exception if unable to open
+        try:
+            self.ser.open()
+        except (FileNotFoundError, serial.serialutil.SerialException) as e:
+            raise RuntimeError('Error: Unable to open serial port!')
 
-        # open and try to read back a result from the echo 'K' command
-        self.ser.open()
+        # Read back an echo value to test
         if self._executeCommand(bytearray(ord('K'), 69)) != bytearray(69, TelescopeComm.STOPBYTE):
             raise RuntimeError('Error: unable to communicate with telescope!')
 
