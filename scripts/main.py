@@ -29,7 +29,7 @@ def Init(strDevice, sdlEventAddr):
 
     # Alt/Azm keys
     diAltKeys = {sdl2.keycode.SDLK_w : 'Alt', sdl2.keycode.SDLK_a : 'Alt'}
-    diAzmKeys = {sdl2.keycode.SDLK_d : 'Alt', sdl2.keycode.SDLK_s : 'Azm'}
+    diAzmKeys = {sdl2.keycode.SDLK_d : 'Azm', sdl2.keycode.SDLK_s : 'Azm'}
     setNegKeys = {sdl2.keycode.SDLK_a, sdl2.keycode.SDLK_s}
 
     # Key presses up will stop movement in that direction
@@ -38,7 +38,9 @@ def Init(strDevice, sdlEventAddr):
         if btn.code in diAltKeys:
             strID = diAltKeys[btn.code]
         elif btn.code in diAzmKeys:
-            strID = diAzmKeys[btn.code]
+            strID = diAizmKeys[btn.code]
+        else:
+            return
         comm.slew(strID, 0)
 
     # Key presses down will start slewing
@@ -46,21 +48,23 @@ def Init(strDevice, sdlEventAddr):
     def fnSlewKeyDown(btn, mgr):
         # Capture telescope comm, hardcoded 'variable' speed
         nonlocal comm
-        nSpeed = 150
+        nSpeed = 7
         # Alt or Azimuth
         if btn.code in diAltKeys:
             strID = diAltKeys[btn.code]
         elif btn.code in diAzmKeys:
             strID = diAzmKeys[btn.code]
+        else:
+            return
         # Negate for down, left
         if btn.code in setNegKeys:
             nSpeed = -nSpeed
         # Send slew command (variable/fixed conditionally?)
-        comm.slewVariable(strID, nSpeed)
+        comm.slewFixed(strID, nSpeed)
 
     # create button handlers for escape, up, down, left, right
     keyList = [Button(sdl2.keycode.SDLK_ESCAPE, fnUp = fnQuit)]
-    for keyCode in {sdl2.keycode.SDLK_UP, sdl2.keycode.SDLK_DOWN, sdl2.keycode.SDLK_LEFT, sdl2.keycode.SDLK_RIGHT}:
+    for keyCode in list(diAzmKeys.keys()) + list(diAltKeys.keys()):
         keyList.append(Button(keyCode, fnUp = fnSlewKeyUp, fnDown = fnSlewKeyDown))
 
     # Create keyboard manager, store event address

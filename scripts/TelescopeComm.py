@@ -39,17 +39,17 @@ class TelescopeComm:
     # Slew at a variable rate (nSpeed in arcseconds)
     def slewVariable(self, strID, nSpeed):
         # Command needs high precision and low precision separate
-        trackRateHigh = (4 * nSpeed) / 256
-        trackRateLow = (4 * nSpeed) % 256
+        trackRateHigh = (4 * abs(nSpeed)) / 256
+        trackRateLow = (4 * abs(nSpeed)) % 256
 
         # Positive / Negative altitude / azimuth
         cmdDict = {
-            'Alt+' : [3, 17, 6, abs(trackRateHigh), abs(trackRateLow)],
-            'Alt-' : [3, 17, 7, abs(trackRateHigh), abs(trackRateLow)],
-            'Azm+' : [3, 16, 6, abs(trackRateHigh), abs(trackRateLow)],
-            'Azm-' : [3, 16, 7, abs(trackRateHigh), abs(trackRateLow)]
+            'Alt+' : [3, 17, 6, trackRateHigh, trackRateLow],
+            'Alt-' : [3, 17, 7, trackRateHigh, trackRateLow],
+            'Azm+' : [3, 16, 6, trackRateHigh, trackRateLow],
+            'Azm-' : [3, 16, 7, trackRateHigh, trackRateLow]
         }
-        return self._slewCommand(strID, cmdDict)
+        return self._slewCommand(strID, cmdDict, nSpeed < 0)
 
     # sends a slew command to the mount
     # strID should be Alt or Azm, nSpeed is a signed int
@@ -61,30 +61,32 @@ class TelescopeComm:
             'Azm+' : [2, 16, 36, abs(nSpeed)],
             'Azm-' : [2, 16, 37, abs(nSpeed)]
         }
-        return self._slewCommand(strID, cmdDict)
+        return self._slewCommand(strID, cmdDict, nSpeed < 0)
 
     # Implementation of command for fixed and variable rates
     # assumes it will get a dict with positive/negative denoted by last char
-    def _slewCommand(self, strID, cmdDict):
+    def _slewCommand(self, strID, cmdDict, bNeg):
         # Create local copy of string, append '+' or '-' depending
         strID = copy.copy(strID)
         if strID == 'Alt' or strID == 'Azm':
             # Store local speed values as well
-            if strID == 'Alt':
-                self.nAltSpeed = nSpeed
-            else:
-                self.nAzmSpeed = nSpeed
+            #if strID == 'Alt':
+            #    self.nAltSpeed = nSpeed
+            #else:
+            #    self.nAzmSpeed = nSpeed
 
             # Append '+' or '-' depending on sign
-            strID += '+' if nSpeed > 0 else '-'
+            strID += '-' if bNeg else '+'
 
-            # Create command bytes
-            cmdData = cmdDict[strID]
-            cmdSlew = bytearray([ord('P'), 0, 0, 0, 0, 0, 0, 0])
-            cmdSlew[1:len(cmdData) + 1] = bytearray(cmdData)
+            # Create command bytes by appending dict value
+            try:
+                cmdSlew = bytearray([ord('P')] + cmdDict[strID])
+            except KeyError:
+                print('Where the fuck was it?')
 
             # execute command and return True (should check resp)
             resp = self._executeCommand(cmdSlew)
+            print(resp)
             return True
 
         # Return false if not handled properly
@@ -97,11 +99,9 @@ class TelescopeComm:
         if len(resp) == 0 or resp[-1] != TelescopeComm.STOPBYTE:
             raise RuntimeError('Error: Invalid response from get AZM-ALT command!')
         # Strip stop byte and split by comma and unpack
-        azmResp, altResp = *(resp[0:len(resp)-1].split(','))
         # values are two 16 bit ints as hex string
-        azm = int(azmResp, 16)
-        alt = int(altResp, 16)
-        return [azm, alt]
+        print(resp)
+        return [int(r, 16) for r in resp[0:len(resp)-1].split(',')]
 
     # Internal function that sends a serial
     # command and waits for the stop byte
