@@ -39,8 +39,8 @@ class TelescopeComm:
     # Slew at a variable rate (nSpeed in arcseconds)
     def slewVariable(self, strID, nSpeed):
         # Command needs high precision and low precision separate
-        trackRateHigh = (4 * abs(nSpeed)) / 256
-        trackRateLow = (4 * abs(nSpeed)) % 256
+        trackRateHigh = int(4 * abs(nSpeed)) >> 8
+        trackRateLow = int(4 * abs(nSpeed)) % 256
 
         # Positive / Negative altitude / azimuth
         cmdDict = {
@@ -80,13 +80,15 @@ class TelescopeComm:
 
             # Create command bytes by appending dict value
             try:
-                cmdSlew = bytearray([ord('P')] + cmdDict[strID])
+                cmdSlew = [ord('P')] + [0] * 6
+                cmdGuts = cmdDict[strID]
+                cmdSlew[1:len(cmdGuts)] = cmdGuts
+                cmdSlew = bytearray(cmdSlew)
             except KeyError:
                 print('Where the fuck was it?')
 
             # execute command and return True (should check resp)
             resp = self._executeCommand(cmdSlew)
-            print(resp)
             return True
 
         # Return false if not handled properly
